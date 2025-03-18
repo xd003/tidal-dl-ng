@@ -49,7 +49,7 @@ def version_callback(value: bool):
         raise typer.Exit()
 
 
-def _download(ctx: typer.Context, urls: list[str], try_login: bool = True) -> bool:
+def _download(ctx: typer.Context, urls: list[str], try_login: bool = True, download_base_path: Optional[str] = None, quality_audio: Optional[str] = None) -> bool:
     """Invokes download function and tracks progress.
 
     :param ctx: The typer context object.
@@ -58,6 +58,10 @@ def _download(ctx: typer.Context, urls: list[str], try_login: bool = True) -> bo
     :type urls: list[str]
     :param try_login: If true, attempts to login to TIDAL.
     :type try_login: bool
+    :param download_base_path: The base path for downloads.
+    :type download_base_path: Optional[str]
+    :param quality_audio: The audio quality for downloads.
+    :type quality_audio: Optional[str]
     :return: True if ran successfully.
     :rtype: bool
     """
@@ -85,19 +89,19 @@ def _download(ctx: typer.Context, urls: list[str], try_login: bool = True) -> bo
         TaskProgressColumn(),
         refresh_per_second=20,
         auto_refresh=True,
-        expand=True,
         transient=False,  # Prevent progress from disappearing
     )
     fn_logger = LoggerWrapped(progress.print)
     dl = Download(
         session=ctx.obj[CTX_TIDAL].session,
         skip_existing=ctx.obj[CTX_TIDAL].settings.data.skip_existing,
-        path_base=settings.data.download_base_path,
+        path_base=download_base_path or settings.data.download_base_path,
         fn_logger=fn_logger,
         progress=progress,
         progress_overall=progress_overall,
         event_abort=handling_app.event_abort,
         event_run=handling_app.event_run,
+        quality_audio=quality_audio or settings.data.quality_audio,
     )
     progress_table = Table.grid()
 
@@ -277,6 +281,22 @@ def download(
             help="List with URLs to download. One per line",
         ),
     ] = None,
+    download_base_path: Annotated[
+        Optional[str],
+        typer.Option(
+            "--download_base_path",
+            "-d",
+            help="The base path for downloads.",
+        ),
+    ] = None,
+    quality_audio: Annotated[
+        Optional[str],
+        typer.Option(
+            "--quality_audio",
+            "-q",
+            help="The audio quality for downloads.",
+        ),
+    ] = None,
 ) -> bool:
     if not urls:
         # Read the text file provided.
@@ -288,7 +308,7 @@ def download(
 
             raise typer.Abort()
 
-    return _download(ctx, urls)
+    return _download(ctx, urls, download_base_path=download_base_path, quality_audio=quality_audio)
 
 
 @dl_fav_group.command(
