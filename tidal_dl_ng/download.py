@@ -770,7 +770,7 @@ class Download:
                 ]
 
                 # Report results as they become available
-                for future in futures.as.completed(l_futures):
+                for future in futures.as_completed(l_futures):
                     # Retrieve result
                     status, result_path_file = future.result()
 
