@@ -89,6 +89,8 @@ class Download:
         progress_overall: Progress = None,
         event_abort: Event = None,
         event_run: Event = None,
+        download_base_path: str = None,
+        quality_audio: Quality = None,
     ):
         self.settings = Settings()
         self.session = session
@@ -97,9 +99,12 @@ class Download:
         self.progress_gui = progress_gui
         self.progress = progress
         self.progress_overall = progress_overall
-        self.path_base = path_base
+        self.path_base = download_base_path or path_base
         self.event_abort = event_abort
         self.event_run = event_run
+
+        if quality_audio:
+            self.session.audio_quality = quality_audio
 
         if not self.settings.data.path_binary_ffmpeg and (
             self.settings.data.video_convert_mp4 or self.settings.data.extract_flac
@@ -765,7 +770,7 @@ class Download:
                 ]
 
                 # Report results as they become available
-                for future in futures.as_completed(l_futures):
+                for future in futures.as.completed(l_futures):
                     # Retrieve result
                     status, result_path_file = future.result()
 
